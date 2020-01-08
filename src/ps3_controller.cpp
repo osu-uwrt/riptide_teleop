@@ -30,7 +30,7 @@ PS3Controller::PS3Controller() : nh("ps3_controller")
 {
   joy_sub = nh.subscribe<sensor_msgs::Joy>("/joy", 1, &PS3Controller::JoyCB, this);
   depth_sub = nh.subscribe<riptide_msgs::Depth>("/state/depth", 1, &PS3Controller::DepthCB, this);
-  imu_sub = nh.subscribe<riptide_msgs::Imu>("/state/imu", 1, &PS3Controller::ImuCB, this);
+  imu_sub = nh.subscribe<sensor_msgs::Imu>("/imu/data", 1, &PS3Controller::ImuCB, this);
   roll_pub = nh.advertise<riptide_msgs::AttitudeCommand>("/command/roll", 1);
   pitch_pub = nh.advertise<riptide_msgs::AttitudeCommand>("/command/pitch", 1);
   yaw_pub = nh.advertise<riptide_msgs::AttitudeCommand>("/command/yaw", 1);
@@ -118,9 +118,16 @@ void PS3Controller::DepthCB(const riptide_msgs::Depth::ConstPtr &depth_msg)
 }
 
 // Create rotation matrix from IMU orientation
-void PS3Controller::ImuCB(const riptide_msgs::Imu::ConstPtr &imu_msg)
+void PS3Controller::ImuCB(const sensor_msgs::Imu::ConstPtr &imu_msg)
 {
-  euler_rpy = imu_msg->rpy_deg;
+  tf2::Quaternion quat;
+  tf2::fromMsg(imu_msg->orientation, quat);
+  double yaw, pitch, roll;
+  tf2::Matrix3x3 mat(quat);
+  mat.getRPY(roll, pitch, yaw);
+  euler_rpy.x = roll * 180 / M_PI;
+  euler_rpy.y = pitch * 180 / M_PI;
+  euler_rpy.z = yaw * 180 / M_PI;
 }
 
 void PS3Controller::JoyCB(const sensor_msgs::Joy::ConstPtr &joy)

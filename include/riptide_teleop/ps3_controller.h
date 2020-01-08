@@ -9,7 +9,7 @@
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Vector3Stamped.h"
 #include "riptide_teleop/ps3_button_mapping.h"
-#include "riptide_msgs/Imu.h"
+#include "sensor_msgs/Imu.h"
 #include "riptide_msgs/AttitudeCommand.h"
 #include "riptide_msgs/DepthCommand.h"
 #include "riptide_msgs/Depth.h"
@@ -17,6 +17,7 @@
 #include "riptide_msgs/Pneumatics.h"
 #include "riptide_msgs/Constants.h"
 #include "riptide_msgs/LinearCommand.h"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 using namespace std;
 
 class PS3Controller
@@ -58,7 +59,7 @@ class PS3Controller
   template <typename T>
   void LoadParam(string param, T &var);
   void DepthCB(const riptide_msgs::Depth::ConstPtr &depth_msg);
-  void ImuCB(const riptide_msgs::Imu::ConstPtr& imu_msg);
+  void ImuCB(const sensor_msgs::Imu::ConstPtr& imu_msg);
   void JoyCB(const sensor_msgs::Joy::ConstPtr& joy);
   void Loop();
 };
