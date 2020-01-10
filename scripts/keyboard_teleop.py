@@ -44,6 +44,18 @@ class KeyboardTeleop():
 
     def on_press(self, key):
         self.keys[key] = True
+        if self.enabled:
+            if key == KeyCode.from_char("p"):
+                self.stop()
+            if key == KeyCode.from_char("x"):
+                self.resetPub.publish(True)
+                self.stop()
+            if key == KeyCode.from_char("0"):
+                self.roll = 0
+                self.pitch = 0
+        else:
+            if key == KeyCode.from_char("e"):
+                self.start()
 
     def on_release(self, key):
         self.keys[key] = False
@@ -76,14 +88,7 @@ class KeyboardTeleop():
                 self.roll -= self.rollSpeed * self.period
             if KeyCode.from_char("l") in self.keys and self.keys[KeyCode.from_char("l")]:
                 self.roll += self.rollSpeed * self.period
-            if KeyCode.from_char("0") in self.keys and self.keys[KeyCode.from_char("0")]:
-                self.roll = 0
-                self.pitch = 0
-            if KeyCode.from_char("p") in self.keys and self.keys[KeyCode.from_char("p")]:
-                self.stop()
-            if KeyCode.from_char("x") in self.keys and self.keys[KeyCode.from_char("x")]:
-                self.resetPub.publish(True)
-                self.stop()
+            
 
             self.roll = self.restrictAngle(self.roll)
             self.pitch = self.restrictAngle(self.pitch)
@@ -95,9 +100,7 @@ class KeyboardTeleop():
             self.rollPub.publish(self.roll, AttitudeCommand.POSITION)
             self.pitchPub.publish(self.pitch, AttitudeCommand.POSITION)
             self.yawPub.publish(self.yaw, AttitudeCommand.POSITION)
-        else:
-            if KeyCode.from_char("e") in self.keys and self.keys[KeyCode.from_char("e")]:
-                self.start()
+        
 
 
 if __name__=="__main__":
