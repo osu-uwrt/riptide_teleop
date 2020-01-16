@@ -29,16 +29,16 @@ int main(int argc, char **argv)
 PS3Controller::PS3Controller() : nh("ps3_controller")
 {
   joy_sub = nh.subscribe<sensor_msgs::Joy>("/joy", 1, &PS3Controller::JoyCB, this);
-  depth_sub = nh.subscribe<riptide_msgs::Depth>("/state/depth", 1, &PS3Controller::DepthCB, this);
-  imu_sub = nh.subscribe<sensor_msgs::Imu>("/imu/data", 1, &PS3Controller::ImuCB, this);
-  roll_pub = nh.advertise<riptide_msgs::AttitudeCommand>("/command/roll", 1);
-  pitch_pub = nh.advertise<riptide_msgs::AttitudeCommand>("/command/pitch", 1);
-  yaw_pub = nh.advertise<riptide_msgs::AttitudeCommand>("/command/yaw", 1);
-  x_pub = nh.advertise<riptide_msgs::LinearCommand>("/command/x", 1);
-  y_pub = nh.advertise<riptide_msgs::LinearCommand>("/command/y", 1);
-  depth_pub = nh.advertise<riptide_msgs::DepthCommand>("/command/depth", 1);
-  reset_pub = nh.advertise<riptide_msgs::ResetControls>("/controls/reset", 1);
-  camera_pub = nh.advertise<std_msgs::Int8>("/command/camera", 1);
+  depth_sub = nh.subscribe<riptide_msgs::Depth>("state/depth", 1, &PS3Controller::DepthCB, this);
+  imu_sub = nh.subscribe<sensor_msgs::Imu>("imu/data", 1, &PS3Controller::ImuCB, this);
+  roll_pub = nh.advertise<riptide_msgs::AttitudeCommand>("command/roll", 1);
+  pitch_pub = nh.advertise<riptide_msgs::AttitudeCommand>("command/pitch", 1);
+  yaw_pub = nh.advertise<riptide_msgs::AttitudeCommand>("command/yaw", 1);
+  x_pub = nh.advertise<riptide_msgs::LinearCommand>("command/x", 1);
+  y_pub = nh.advertise<riptide_msgs::LinearCommand>("command/y", 1);
+  depth_pub = nh.advertise<riptide_msgs::DepthCommand>("command/depth", 1);
+  reset_pub = nh.advertise<riptide_msgs::ResetControls>("controls/reset", 1);
+  camera_pub = nh.advertise<std_msgs::Int8>("command/camera", 1);
 
   PS3Controller::LoadParam<double>("rate", rt);                       // [Hz]
   PS3Controller::LoadParam<double>("max_x_force", MAX_X_FORCE);       // [m/s^2]

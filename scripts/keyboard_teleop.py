@@ -22,13 +22,13 @@ class KeyboardTeleop():
     period = 0.1
 
     def __init__(self):
-        self.xPub = rospy.Publisher("/command/x", LinearCommand, queue_size=10)
-        self.yPub = rospy.Publisher("/command/y", LinearCommand, queue_size=10)
-        self.rollPub = rospy.Publisher("/command/roll", AttitudeCommand, queue_size=10)
-        self.pitchPub = rospy.Publisher("/command/pitch", AttitudeCommand, queue_size=10)
-        self.yawPub = rospy.Publisher("/command/yaw", AttitudeCommand, queue_size=10)
-        self.depthPub = rospy.Publisher("/command/depth", DepthCommand, queue_size=10)
-        self.resetPub = rospy.Publisher("/controls/reset", ResetControls, queue_size=10)
+        self.xPub = rospy.Publisher("command/x", LinearCommand, queue_size=10)
+        self.yPub = rospy.Publisher("command/y", LinearCommand, queue_size=10)
+        self.rollPub = rospy.Publisher("command/roll", AttitudeCommand, queue_size=10)
+        self.pitchPub = rospy.Publisher("command/pitch", AttitudeCommand, queue_size=10)
+        self.yawPub = rospy.Publisher("command/yaw", AttitudeCommand, queue_size=10)
+        self.depthPub = rospy.Publisher("command/depth", DepthCommand, queue_size=10)
+        self.resetPub = rospy.Publisher("controls/reset", ResetControls, queue_size=10)
         self.stop()
 
     def restrictAngle(self, angle):
@@ -38,10 +38,10 @@ class KeyboardTeleop():
         self.resetPub.publish(False)
         self.roll = 0
         self.pitch = 0
-        quat = rospy.wait_for_message("/imu/data", Imu).orientation
+        quat = rospy.wait_for_message("imu/data", Imu).orientation
         quat = [quat.x, quat.y, quat.z, quat.w]
         self.yaw = np.array(euler_from_quaternion(quat))[2] * 180 / math.pi
-        self.depth = max(rospy.wait_for_message("/state/depth", Depth).depth, 1)
+        self.depth = max(rospy.wait_for_message("state/depth", Depth).depth, 1)
         self.enabled = True
         rospy.loginfo("Keyboard Teleop enabled")
 
