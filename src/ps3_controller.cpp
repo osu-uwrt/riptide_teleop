@@ -26,7 +26,7 @@ int main(int argc, char **argv)
   ps3.Loop();
 }
 
-PS3Controller::PS3Controller() : nh("ps3_controller")
+PS3Controller::PS3Controller() : nh()
 {
   joy_sub = nh.subscribe<sensor_msgs::Joy>("/joy", 1, &PS3Controller::JoyCB, this);
   depth_sub = nh.subscribe<riptide_msgs::Depth>("state/depth", 1, &PS3Controller::DepthCB, this);
