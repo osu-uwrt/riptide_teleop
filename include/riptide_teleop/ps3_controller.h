@@ -9,10 +9,9 @@
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Vector3Stamped.h"
 #include "riptide_teleop/ps3_button_mapping.h"
-#include "sensor_msgs/Imu.h"
+#include "nav_msgs/Odometry.h"
 #include "riptide_msgs/AttitudeCommand.h"
 #include "riptide_msgs/DepthCommand.h"
-#include "riptide_msgs/Depth.h"
 #include "riptide_msgs/ResetControls.h"
 #include "riptide_msgs/Pneumatics.h"
 #include "riptide_msgs/Constants.h"
@@ -23,7 +22,7 @@ using namespace std;
 class PS3Controller
 {
  private:
-  ros::NodeHandle nh;
+  ros::NodeHandle nh, private_nh;
   ros::Publisher depth_pub, x_pub, y_pub, moment_pub, reset_pub;
   ros::Publisher camera_pub, pneumatics_pub, roll_pub, pitch_pub, yaw_pub;
   ros::Subscriber joy_sub, depth_sub, imu_sub;
@@ -58,8 +57,7 @@ class PS3Controller
   PS3Controller();
   template <typename T>
   void LoadParam(string param, T &var);
-  void DepthCB(const riptide_msgs::Depth::ConstPtr &depth_msg);
-  void ImuCB(const sensor_msgs::Imu::ConstPtr& imu_msg);
+  void OdomCB(const nav_msgs::Odometry::ConstPtr &odom_msg);
   void JoyCB(const sensor_msgs::Joy::ConstPtr& joy);
   void Loop();
 };

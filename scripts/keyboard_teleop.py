@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 import rospy
-from riptide_msgs.msg import LinearCommand, AttitudeCommand, DepthCommand, ResetControls, Depth
+from riptide_msgs.msg import LinearCommand, AttitudeCommand, DepthCommand, ResetControls
+from nav_msgs.mag import Odometry
 from sensor_msgs.msg import Imu
 
 from tf.transformations import euler_from_quaternion
@@ -38,10 +39,10 @@ class KeyboardTeleop():
         self.resetPub.publish(False)
         self.roll = 0
         self.pitch = 0
-        quat = rospy.wait_for_message("imu/data", Imu).orientation
+        quat = rospy.wait_for_message("odometry/filtered", Odometry).pose.pose.orientation
         quat = [quat.x, quat.y, quat.z, quat.w]
         self.yaw = np.array(euler_from_quaternion(quat))[2] * 180 / math.pi
-        self.depth = max(rospy.wait_for_message("state/depth", Depth).depth, 1)
+        self.depth = max(rospy.wait_for_message("odometry/filtered", Odometry).pose.pose.position.z, 1)
         self.enabled = True
         rospy.loginfo("Keyboard Teleop enabled")
 

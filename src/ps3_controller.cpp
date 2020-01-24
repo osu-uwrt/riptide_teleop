@@ -26,11 +26,10 @@ int main(int argc, char **argv)
   ps3.Loop();
 }
 
-PS3Controller::PS3Controller() : nh()
+PS3Controller::PS3Controller() : nh(), private_nh("~")
 {
   joy_sub = nh.subscribe<sensor_msgs::Joy>("/joy", 1, &PS3Controller::JoyCB, this);
-  depth_sub = nh.subscribe<riptide_msgs::Depth>("state/depth", 1, &PS3Controller::DepthCB, this);
-  imu_sub = nh.subscribe<sensor_msgs::Imu>("imu/data", 1, &PS3Controller::ImuCB, this);
+  depth_sub = nh.subscribe<nav_msgs::Odometry>("odometry/filtered", 1, &PS3Controller::OdomCB, this);
   roll_pub = nh.advertise<riptide_msgs::AttitudeCommand>("command/roll", 1);
   pitch_pub = nh.advertise<riptide_msgs::AttitudeCommand>("command/pitch", 1);
   yaw_pub = nh.advertise<riptide_msgs::AttitudeCommand>("command/yaw", 1);
@@ -98,7 +97,7 @@ void PS3Controller::LoadParam(string param, T &var)
 {
   try
   {
-    if (!nh.getParam(param, var))
+    if (!private_nh.getParam(param, var))
     {
       throw 0;
     }
@@ -112,16 +111,11 @@ void PS3Controller::LoadParam(string param, T &var)
   }
 }
 
-void PS3Controller::DepthCB(const riptide_msgs::Depth::ConstPtr &depth_msg)
+void PS3Controller::OdomCB(const nav_msgs::Odometry::ConstPtr &odom_msg)
 {
-  current_depth = depth_msg->depth;
-}
-
-// Create rotation matrix from IMU orientation
-void PS3Controller::ImuCB(const sensor_msgs::Imu::ConstPtr &imu_msg)
-{
+  current_depth = odom_msg->pose.pose.position.z;
   tf2::Quaternion quat;
-  tf2::fromMsg(imu_msg->orientation, quat);
+  tf2::fromMsg(odom_msg->pose.pose.orientation, quat);
   double yaw, pitch, roll;
   tf2::Matrix3x3 mat(quat);
   mat.getRPY(roll, pitch, yaw);
