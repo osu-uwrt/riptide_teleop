@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from riptide_msgs.msg import LinearCommand, AttitudeCommand, DepthCommand, ResetControls, ControllerEnable
+from riptide_msgs.msg import LinearCommand, AttitudeCommand, DepthCommand, ResetControls
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 
@@ -39,12 +39,10 @@ class KeyboardTeleop():
         self.resetPub.publish(False)
         self.roll = 0
         self.pitch = 0
-        #quat = rospy.wait_for_message("odometry/filtered", Odometry).pose.pose.orientation
-        #quat = [quat.x, quat.y, quat.z, quat.w]
-        self.yaw = 0
-        #np.array(euler_from_quaternion(quat))[2] * 180 / math.pi
-        self.depth = .1
-        #max(rospy.wait_for_message("odometry/filtered", Odometry).pose.pose.position.z, 1)
+        quat = rospy.wait_for_message("odometry/filtered", Odometry).pose.pose.orientation
+        quat = [quat.x, quat.y, quat.z, quat.w]
+        self.yaw = np.array(euler_from_quaternion(quat))[2] * 180 / math.pi
+        self.depth = min(rospy.wait_for_message("odometry/filtered", Odometry).pose.pose.position.z, -1)
         self.enabled = True
         rospy.loginfo("Keyboard Teleop enabled")
 
@@ -83,21 +81,21 @@ class KeyboardTeleop():
             if Key.left in self.keys and self.keys[Key.left]:
                 self.yaw -= self.yawSpeed * self.period
             if KeyCode.from_char("w") in self.keys and self.keys[KeyCode.from_char("w")]:
-                self.depth -= self.depthSpeed * self.period
-            if KeyCode.from_char("s") in self.keys and self.keys[KeyCode.from_char("s")]:
                 self.depth += self.depthSpeed * self.period
+            if KeyCode.from_char("s") in self.keys and self.keys[KeyCode.from_char("s")]:
+                self.depth -= self.depthSpeed * self.period
             if KeyCode.from_char("a") in self.keys and self.keys[KeyCode.from_char("a")]:
-                y -= self.ySpeed
-            if KeyCode.from_char("d") in self.keys and self.keys[KeyCode.from_char("d")]:
                 y += self.ySpeed
+            if KeyCode.from_char("d") in self.keys and self.keys[KeyCode.from_char("d")]:
+                y -= self.ySpeed
             if KeyCode.from_char("i") in self.keys and self.keys[KeyCode.from_char("i")]:
-                self.pitch -= self.pitchSpeed * self.period
-            if KeyCode.from_char("k") in self.keys and self.keys[KeyCode.from_char("k")]:
                 self.pitch += self.pitchSpeed * self.period
+            if KeyCode.from_char("k") in self.keys and self.keys[KeyCode.from_char("k")]:
+                self.pitch -= self.pitchSpeed * self.period
             if KeyCode.from_char("j") in self.keys and self.keys[KeyCode.from_char("j")]:
-                self.roll -= self.rollSpeed * self.period
-            if KeyCode.from_char("l") in self.keys and self.keys[KeyCode.from_char("l")]:
                 self.roll += self.rollSpeed * self.period
+            if KeyCode.from_char("l") in self.keys and self.keys[KeyCode.from_char("l")]:
+                self.roll -= self.rollSpeed * self.period
             
 
             self.roll = self.restrictAngle(self.roll)
