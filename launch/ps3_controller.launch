@@ -8,7 +8,6 @@
     <rosparam command="load" file="$(find riptide_teleop)/cfg/ps3_command_rates.yaml" />
     <rosparam command="load" file="$(find riptide_controllers)/cfg/controller_properties_depth.yaml" />
     <rosparam command="load" file="$(find riptide_controllers)/cfg/max_load.yaml" />
-    <rosparam command="load" file="$(find riptide_controllers)/cfg/vehicle_properties.yaml" />
     <param name="rate" type="double" value="$(arg rate)" />
   </node>
 </launch>
