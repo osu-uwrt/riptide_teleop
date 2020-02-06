@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from riptide_msgs.msg import LinearCommand, AttitudeCommand, DepthCommand, ResetControls
+from riptide_msgs.msg import LinearCommand, AttitudeCommand, DepthCommand, ResetControls, ControllerEnable
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu
 
@@ -30,6 +30,8 @@ class KeyboardTeleop():
         self.yawPub = rospy.Publisher("command/yaw", AttitudeCommand, queue_size=10)
         self.depthPub = rospy.Publisher("command/depth", DepthCommand, queue_size=10)
         self.resetPub = rospy.Publisher("controls/reset", ResetControls, queue_size=10)
+        self.controllerPub = rospy.Publisher("/command/controller_switch", ControllerEnable, queue_size=10)
+        self.controller = 0
         self.stop()
 
     def restrictAngle(self, angle):
@@ -50,6 +52,16 @@ class KeyboardTeleop():
         self.enabled = False
         rospy.loginfo("Keyboard Teleop disabled. Press e to enable")
 
+    def controllerCB(self):
+        if self.controller == 1:
+            self.controller = 0
+            self.controllerPub.publish(ControllerEnable.LINEAR)
+            rospy.loginfo("Control given to P controller")
+        else:
+            self.controller = 1
+            self.controllerPub.publish(ControllerEnable.LQR)
+            rospy.loginfo("Control given to LQR")
+
     def on_press(self, key):
         self.keys[key] = True
         if self.enabled:
@@ -61,9 +73,13 @@ class KeyboardTeleop():
             if key == KeyCode.from_char("0"):
                 self.roll = 0
                 self.pitch = 0
+            if key == KeyCode.from_char("r"):
+                self.controllerCB()
         else:
             if key == KeyCode.from_char("e"):
                 self.start()
+            if key == KeyCode.from_char("r"):
+                self.controllerCB()
 
     def on_release(self, key):
         self.keys[key] = False
