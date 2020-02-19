@@ -93,9 +93,9 @@ class KeyboardTeleop():
             if Key.up in self.keys and self.keys[Key.up]:
                 x += self.xSpeed
             if Key.right in self.keys and self.keys[Key.right]:
-                self.yaw += self.yawSpeed * self.period
-            if Key.left in self.keys and self.keys[Key.left]:
                 self.yaw -= self.yawSpeed * self.period
+            if Key.left in self.keys and self.keys[Key.left]:
+                self.yaw += self.yawSpeed * self.period
             if KeyCode.from_char("w") in self.keys and self.keys[KeyCode.from_char("w")]:
                 self.depth += self.depthSpeed * self.period
             if KeyCode.from_char("s") in self.keys and self.keys[KeyCode.from_char("s")]:
