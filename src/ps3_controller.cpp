@@ -197,18 +197,18 @@ void PS3Controller::JoyCB(const sensor_msgs::Joy::ConstPtr &joy)
 
     // Pitch
     if (joy->buttons[BUTTON_CROSS_UP])
-      delta_attitude.y = -pitch_factor * (1 + (boost - 1) * joy->buttons[BUTTON_SHAPE_SQUARE]); // Up -> inc pitch (Nose points upward)
+      delta_attitude.y = pitch_factor * (1 + (boost - 1) * joy->buttons[BUTTON_SHAPE_SQUARE]); // Up -> inc pitch (Nose points upward)
     else if (joy->buttons[BUTTON_CROSS_DOWN])
-      delta_attitude.y = pitch_factor * (1 + (boost - 1) * joy->buttons[BUTTON_SHAPE_SQUARE]); //Down -> dec pitch (Nose points downward)
+      delta_attitude.y = -pitch_factor * (1 + (boost - 1) * joy->buttons[BUTTON_SHAPE_SQUARE]); //Down -> dec pitch (Nose points downward)
     else
       delta_attitude.y = 0;
 
-    cmd_y.value = -joy->axes[AXES_STICK_LEFT_LR] * MAX_Y_FORCE; // Sway (Y) positive left
-    delta_depth = -joy->axes[AXES_STICK_LEFT_UD] * depth_factor; // Up -> dec depth, Down -> inc depth
+    cmd_y.value = joy->axes[AXES_STICK_LEFT_LR] * MAX_Y_FORCE; // Sway (Y) positive left
+    delta_depth = joy->axes[AXES_STICK_LEFT_UD] * depth_factor; // Up -> dec depth, Down -> inc depth
 
       // Update Linear XY Accel
     cmd_x.value = joy->axes[AXES_STICK_RIGHT_UD] * MAX_X_FORCE;  // Surge (X) positive forward
-    delta_attitude.z = -joy->axes[AXES_STICK_RIGHT_LR] * yaw_factor;
+    delta_attitude.z = joy->axes[AXES_STICK_RIGHT_LR] * yaw_factor;
     
   }
 
@@ -257,7 +257,7 @@ void PS3Controller::UpdateCommands()
 
   cmd_depth.active = true;
   cmd_depth.depth += delta_depth;
-  if (cmd_depth.depth < 0)
+  if (cmd_depth.depth > 0)
     cmd_depth.depth = 0;
 
   camera_msg.data = camera;
