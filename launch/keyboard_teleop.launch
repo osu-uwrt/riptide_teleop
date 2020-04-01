@@ -1,3 +1,5 @@
 <launch>
-  <node pkg="riptide_teleop" type="keyboard_teleop.py" name="keyboard_teleop" output="screen" />
+  <arg name="robot" default="puddles" doc="Which robot to control" />
+
+  <node pkg="riptide_teleop" type="keyboard_teleop.py" name="keyboard_teleop" output="screen" ns="$(arg robot)" />
 </launch>

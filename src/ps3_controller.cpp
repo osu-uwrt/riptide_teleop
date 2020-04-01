@@ -26,19 +26,18 @@ int main(int argc, char **argv)
   ps3.Loop();
 }
 
-PS3Controller::PS3Controller() : nh("ps3_controller")
+PS3Controller::PS3Controller() : nh(), private_nh("~")
 {
   joy_sub = nh.subscribe<sensor_msgs::Joy>("/joy", 1, &PS3Controller::JoyCB, this);
-  depth_sub = nh.subscribe<riptide_msgs::Depth>("/state/depth", 1, &PS3Controller::DepthCB, this);
-  imu_sub = nh.subscribe<riptide_msgs::Imu>("/state/imu", 1, &PS3Controller::ImuCB, this);
-  roll_pub = nh.advertise<riptide_msgs::AttitudeCommand>("/command/roll", 1);
-  pitch_pub = nh.advertise<riptide_msgs::AttitudeCommand>("/command/pitch", 1);
-  yaw_pub = nh.advertise<riptide_msgs::AttitudeCommand>("/command/yaw", 1);
-  x_pub = nh.advertise<riptide_msgs::LinearCommand>("/command/x", 1);
-  y_pub = nh.advertise<riptide_msgs::LinearCommand>("/command/y", 1);
-  depth_pub = nh.advertise<riptide_msgs::DepthCommand>("/command/depth", 1);
-  reset_pub = nh.advertise<riptide_msgs::ResetControls>("/controls/reset", 1);
-  camera_pub = nh.advertise<std_msgs::Int8>("/command/camera", 1);
+  depth_sub = nh.subscribe<nav_msgs::Odometry>("odometry/filtered", 1, &PS3Controller::OdomCB, this);
+  roll_pub = nh.advertise<riptide_msgs::AttitudeCommand>("command/roll", 1);
+  pitch_pub = nh.advertise<riptide_msgs::AttitudeCommand>("command/pitch", 1);
+  yaw_pub = nh.advertise<riptide_msgs::AttitudeCommand>("command/yaw", 1);
+  x_pub = nh.advertise<riptide_msgs::LinearCommand>("command/x", 1);
+  y_pub = nh.advertise<riptide_msgs::LinearCommand>("command/y", 1);
+  depth_pub = nh.advertise<riptide_msgs::DepthCommand>("command/depth", 1);
+  reset_pub = nh.advertise<riptide_msgs::ResetControls>("controls/reset", 1);
+  camera_pub = nh.advertise<std_msgs::Int8>("command/camera", 1);
 
   PS3Controller::LoadParam<double>("rate", rt);                       // [Hz]
   PS3Controller::LoadParam<double>("max_x_force", MAX_X_FORCE);       // [m/s^2]
@@ -98,7 +97,7 @@ void PS3Controller::LoadParam(string param, T &var)
 {
   try
   {
-    if (!nh.getParam(param, var))
+    if (!private_nh.getParam(param, var))
     {
       throw 0;
     }
@@ -112,15 +111,17 @@ void PS3Controller::LoadParam(string param, T &var)
   }
 }
 
-void PS3Controller::DepthCB(const riptide_msgs::Depth::ConstPtr &depth_msg)
+void PS3Controller::OdomCB(const nav_msgs::Odometry::ConstPtr &odom_msg)
 {
-  current_depth = depth_msg->depth;
-}
-
-// Create rotation matrix from IMU orientation
-void PS3Controller::ImuCB(const riptide_msgs::Imu::ConstPtr &imu_msg)
-{
-  euler_rpy = imu_msg->rpy_deg;
+  current_depth = odom_msg->pose.pose.position.z;
+  tf2::Quaternion quat;
+  tf2::fromMsg(odom_msg->pose.pose.orientation, quat);
+  double yaw, pitch, roll;
+  tf2::Matrix3x3 mat(quat);
+  mat.getRPY(roll, pitch, yaw);
+  euler_rpy.x = roll * 180 / M_PI;
+  euler_rpy.y = pitch * 180 / M_PI;
+  euler_rpy.z = yaw * 180 / M_PI;
 }
 
 void PS3Controller::JoyCB(const sensor_msgs::Joy::ConstPtr &joy)
@@ -196,18 +197,18 @@ void PS3Controller::JoyCB(const sensor_msgs::Joy::ConstPtr &joy)
 
     // Pitch
     if (joy->buttons[BUTTON_CROSS_UP])
-      delta_attitude.y = -pitch_factor * (1 + (boost - 1) * joy->buttons[BUTTON_SHAPE_SQUARE]); // Up -> inc pitch (Nose points upward)
+      delta_attitude.y = pitch_factor * (1 + (boost - 1) * joy->buttons[BUTTON_SHAPE_SQUARE]); // Up -> inc pitch (Nose points upward)
     else if (joy->buttons[BUTTON_CROSS_DOWN])
-      delta_attitude.y = pitch_factor * (1 + (boost - 1) * joy->buttons[BUTTON_SHAPE_SQUARE]); //Down -> dec pitch (Nose points downward)
+      delta_attitude.y = -pitch_factor * (1 + (boost - 1) * joy->buttons[BUTTON_SHAPE_SQUARE]); //Down -> dec pitch (Nose points downward)
     else
       delta_attitude.y = 0;
 
-    cmd_y.value = -joy->axes[AXES_STICK_LEFT_LR] * MAX_Y_FORCE; // Sway (Y) positive left
-    delta_depth = -joy->axes[AXES_STICK_LEFT_UD] * depth_factor; // Up -> dec depth, Down -> inc depth
+    cmd_y.value = joy->axes[AXES_STICK_LEFT_LR] * MAX_Y_FORCE; // Sway (Y) positive left
+    delta_depth = joy->axes[AXES_STICK_LEFT_UD] * depth_factor; // Up -> dec depth, Down -> inc depth
 
       // Update Linear XY Accel
     cmd_x.value = joy->axes[AXES_STICK_RIGHT_UD] * MAX_X_FORCE;  // Surge (X) positive forward
-    delta_attitude.z = -joy->axes[AXES_STICK_RIGHT_LR] * yaw_factor;
+    delta_attitude.z = joy->axes[AXES_STICK_RIGHT_LR] * yaw_factor;
     
   }
 
@@ -256,7 +257,7 @@ void PS3Controller::UpdateCommands()
 
   cmd_depth.active = true;
   cmd_depth.depth += delta_depth;
-  if (cmd_depth.depth < 0)
+  if (cmd_depth.depth > 0)
     cmd_depth.depth = 0;
 
   camera_msg.data = camera;
