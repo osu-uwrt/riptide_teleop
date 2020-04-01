@@ -11,6 +11,7 @@ find_package(catkin REQUIRED
     tf
     sensor_msgs
     cv_bridge
+    tf2_geometry_msgs
 )
 
 catkin_package(INCLUDE_DIRS include)
