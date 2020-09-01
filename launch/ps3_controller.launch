@@ -1,14 +1,8 @@
 <launch>
-  <arg name="port" default="1" />
-  <arg name="rate" default="100" />
-  <arg name="enable_depth" default="true" />
-  <arg name="enable_attitude" default="true" />
+  <arg name="robot" default="puddles" doc="Name of the vehicle" />
 
-  <node pkg="riptide_teleop" type="ps3_controller" name="ps3_controller" output="screen" >
-    <rosparam command="load" file="$(find riptide_teleop)/cfg/ps3_command_rates.yaml" />
-    <rosparam command="load" file="$(find riptide_controllers)/cfg/controller_properties_depth.yaml" />
-    <rosparam command="load" file="$(find riptide_controllers)/cfg/max_load.yaml" />
-    <param name="rate" type="double" value="$(arg rate)" />
+  <node pkg="riptide_teleop" type="ps3_teleop.py" name="ps3_teleop" output="screen">
+    <param name="vehicle_config" value="$(find riptide_descriptions)/config/$(arg robot).yaml" />
   </node>
 </launch>
 
