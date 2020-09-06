@@ -43,7 +43,6 @@ class KeyboardTeleop():
     
     def start(self):
         odom_msg = rospy.wait_for_message("odometry/filtered", Odometry)
-        odom_msg = Odometry()
         r, p, y = euler_from_quaternion(msgToNumpy(odom_msg.pose.pose.orientation))
         r, p = 0, 0
         self.desired_orientation = quaternion_from_euler(r, p, y)
