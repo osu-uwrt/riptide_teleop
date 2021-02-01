@@ -70,7 +70,7 @@ class PS3Teleop():
     def stop(self):
         linear_velocity = Vector3()
         self.lin_vel_pub.publish(linear_velocity)
-        self.last_linear_velocity = linear_velocity
+        self.last_linear_velocity = np.zeros(3)
         self.enabled = False
 
     def joy_cb(self, msg):
