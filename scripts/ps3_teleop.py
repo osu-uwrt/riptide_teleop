@@ -118,7 +118,8 @@ class PS3Teleop():
 
             # Zero roll and pitch
             if msg.buttons[BUTTON_SHAPE_CIRCLE]:
-                r, p, y = euler_from_quaternion(self.desired_orientation)
+                odom_msg = rospy.wait_for_message("odometry/filtered", Odometry)
+                r, p, y = euler_from_quaternion(msgToNumpy(odom_msg.pose.pose.orientation))
                 r, p = 0, 0
                 desired_orientation = quaternion_from_euler(r, p, y)
                 self.orientation_pub.publish(*desired_orientation)
