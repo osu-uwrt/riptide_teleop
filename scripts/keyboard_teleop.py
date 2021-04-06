@@ -28,10 +28,10 @@ class KeyboardTeleop():
             self.max_angular_velocity = config["maximum_angular_velocity"]
 
         self.odom_sub = rospy.Subscriber("odometry/filtered", Odometry, self.odom_cb)
-        self.lin_vel_pub = rospy.Publisher("linear_velocity", Vector3, queue_size=1)
-        self.orientation_pub = rospy.Publisher("orientation", Quaternion, queue_size=1)
-        self.position_pub = rospy.Publisher("position", Vector3, queue_size=1)
-        self.off_pub = rospy.Publisher("off", Empty, queue_size=1)
+        self.lin_vel_pub = rospy.Publisher("linear_velocity", Vector3, queue_size=10)
+        self.orientation_pub = rospy.Publisher("orientation", Quaternion, queue_size=10)
+        self.position_pub = rospy.Publisher("position", Vector3, queue_size=10)
+        self.off_pub = rospy.Publisher("off", Empty, queue_size=10)
 
         self.START_DEPTH = -1
         self.last_odom_msg = rospy.get_rostime()

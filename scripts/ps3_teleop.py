@@ -53,12 +53,12 @@ class PS3Teleop():
             self.max_linear_velocity = config["maximum_linear_velocity"]
             self.max_angular_velocity = config["maximum_angular_velocity"]
 
-        self.joy_sub = rospy.Subscriber("/joy", Joy, self.joy_cb)
-        self.lin_vel_pub = rospy.Publisher("linear_velocity", Vector3, queue_size=1)
-        self.ang_vel_pub = rospy.Publisher("angular_velocity", Vector3, queue_size=1)
-        self.orientation_pub = rospy.Publisher("orientation", Quaternion, queue_size=1)
-        self.position_pub = rospy.Publisher("position", Vector3, queue_size=1)
-        self.off_pub = rospy.Publisher("off", Empty, queue_size=1)
+        self.joy_sub = rospy.Subscriber("/joy", Joy, self.joy_cb, queue_size=1)
+        self.lin_vel_pub = rospy.Publisher("linear_velocity", Vector3, queue_size=10)
+        self.ang_vel_pub = rospy.Publisher("angular_velocity", Vector3, queue_size=10)
+        self.orientation_pub = rospy.Publisher("orientation", Quaternion, queue_size=10)
+        self.position_pub = rospy.Publisher("position", Vector3, queue_size=10)
+        self.off_pub = rospy.Publisher("off", Empty, queue_size=10)
 
         self.START_DEPTH = -1
         self.last_linear_velocity = np.zeros(3)
