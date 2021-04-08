@@ -6,8 +6,9 @@ from sensor_msgs.msg import Imu, Joy
 from geometry_msgs.msg import Vector3, Quaternion
 from std_msgs.msg import Empty
 
-from tf.transformations import euler_from_quaternion, quaternion_from_euler
+from tf.transformations import euler_from_quaternion, quaternion_from_euler, quaternion_multiply
 import numpy as np
+import math
 import yaml
 
 AXES_STICK_LEFT_LR = 0 # Fully Leftwards = +1, Mid = 0, Fully Rightwards = -1
@@ -54,39 +55,34 @@ class PS3Teleop():
             self.max_angular_velocity = config["maximum_angular_velocity"]
 
         self.joy_sub = rospy.Subscriber("/joy", Joy, self.joy_cb, queue_size=1)
+        self.odom_sub = rospy.Subscriber("odometry/filtered", Odometry, self.odom_cb, queue_size=1)
         self.lin_vel_pub = rospy.Publisher("linear_velocity", Vector3, queue_size=10)
-        self.ang_vel_pub = rospy.Publisher("angular_velocity", Vector3, queue_size=10)
         self.orientation_pub = rospy.Publisher("orientation", Quaternion, queue_size=10)
         self.position_pub = rospy.Publisher("position", Vector3, queue_size=10)
         self.off_pub = rospy.Publisher("off", Empty, queue_size=10)
 
         self.START_DEPTH = -1
+        self.last_odom_msg = rospy.get_rostime()
         self.last_linear_velocity = np.zeros(3)
-        self.last_angular_velocity = np.zeros(3)
+        self.desired_orientation = np.array([0, 0, 0, 1.0])
+        self.ang_vel = np.zeros(3)
         self.enabled = False
-
-    def stop(self):
-        # Set the velocities to 0
-        zero_velocity = Vector3()
-        self.lin_vel_pub.publish(zero_velocity)
-        self.ang_vel_pub.publish(zero_velocity)
-        self.last_linear_velocity = np.zeros(3)
-        self.last_angular_velocity = np.zeros(3)
-        self.enabled = False
-
+      
     def joy_cb(self, msg):
         # Kill button
         if msg.buttons[BUTTON_SHAPE_X]:
-            self.stop()
+            self.enabled = False
             self.off_pub.publish()
             return
 
         # Pause button
         if self.enabled and msg.buttons[BUTTON_SHAPE_SQUARE]:
-            self.stop()
+            self.enabled = False
+            self.lin_vel_pub.publish(Vector3())
+            self.last_linear_velocity = np.zeros(3)
             return
 
-        # While controller is controlling
+        # While controller is enabled
         if self.enabled:
             # Build linear velocity
             linear_velocity = Vector3()
@@ -95,34 +91,27 @@ class PS3Teleop():
             linear_velocity.z = curve(msg.axes[AXES_STICK_LEFT_UD]) * self.max_linear_velocity[2]
 
             # Build angular velocity
-            angular_velocity = Vector3()
-            angular_velocity.z = curve(msg.axes[AXES_STICK_RIGHT_LR]) * self.max_angular_velocity[2]
+            self.ang_vel = np.zeros(3)
+            self.ang_vel[2] = curve(msg.axes[AXES_STICK_RIGHT_LR]) * self.max_angular_velocity[2]
             if msg.buttons[BUTTON_CROSS_UP]:
-                angular_velocity.y = self.max_angular_velocity[1]
+                self.ang_vel[1] = self.max_angular_velocity[1]
             if msg.buttons[BUTTON_CROSS_DOWN]:
-                angular_velocity.y = -self.max_angular_velocity[1]
+                self.ang_vel[1] = -self.max_angular_velocity[1]
             if msg.buttons[BUTTON_CROSS_RIGHT]:
-                angular_velocity.x = self.max_angular_velocity[0]
+                self.ang_vel[0] = self.max_angular_velocity[0]
             if msg.buttons[BUTTON_CROSS_LEFT]:
-                angular_velocity.x = -self.max_angular_velocity[0]
+                self.ang_vel[0] = -self.max_angular_velocity[0]
 
             # Publish linear velocity if the joystick has been touched
             if not np.array_equal(self.last_linear_velocity, msgToNumpy(linear_velocity)):
                 self.lin_vel_pub.publish(linear_velocity)
                 self.last_linear_velocity = msgToNumpy(linear_velocity)
 
-            # Publish angular velocity if the joystick has been touched
-            if not np.array_equal(self.last_angular_velocity, msgToNumpy(angular_velocity)):
-                self.ang_vel_pub.publish(angular_velocity)
-                self.last_angular_velocity = msgToNumpy(angular_velocity)
-
             # Zero roll and pitch
             if msg.buttons[BUTTON_SHAPE_CIRCLE]:
-                odom_msg = rospy.wait_for_message("odometry/filtered", Odometry)
-                r, p, y = euler_from_quaternion(msgToNumpy(odom_msg.pose.pose.orientation))
+                r, p, y = euler_from_quaternion(self.desired_orientation)
                 r, p = 0, 0
-                desired_orientation = quaternion_from_euler(r, p, y)
-                self.orientation_pub.publish(*desired_orientation)
+                self.desired_orientation = quaternion_from_euler(r, p, y)
         else:
             # Start controlling
             if msg.buttons[BUTTON_START]:
@@ -130,16 +119,26 @@ class PS3Teleop():
                 odom_msg = rospy.wait_for_message("odometry/filtered", Odometry)
                 r, p, y = euler_from_quaternion(msgToNumpy(odom_msg.pose.pose.orientation))
                 r, p = 0, 0
-                desired_orientation = quaternion_from_euler(r, p, y)
-                self.orientation_pub.publish(*desired_orientation)
+                self.desired_orientation = quaternion_from_euler(r, p, y)
 
-                # Submerge if not submerged
+                # Submerge if not submerged. Else stop the bot
                 desired_position = msgToNumpy(odom_msg.pose.pose.position)
                 if desired_position[2] > self.START_DEPTH:
                     desired_position[2] = self.START_DEPTH
-                self.position_pub.publish(*desired_position)
+                    self.position_pub.publish(*desired_position)
+                else:
+                    self.lin_vel_pub.publish(Vector3())
+
                 self.enabled = True
 
+    def odom_cb(self, msg):
+        if self.enabled:
+            dt = (rospy.get_rostime() - self.last_odom_msg).to_sec()
+            rotation = quaternion_from_euler(*(self.ang_vel * dt))
+            self.desired_orientation = quaternion_multiply(self.desired_orientation, rotation)
+            self.orientation_pub.publish(*self.desired_orientation)
+
+        self.last_odom_msg = rospy.get_rostime()
 
 if __name__=="__main__":
     
