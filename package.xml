@@ -17,7 +17,6 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>joy</build_depend>
-  <build_depend>riptide_msgs</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
