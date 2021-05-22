@@ -54,19 +54,19 @@ class PS3Teleop():
             self.max_linear_velocity = config["maximum_linear_velocity"]
             self.max_angular_velocity = config["maximum_angular_velocity"]
 
-        self.joy_sub = rospy.Subscriber("/joy", Joy, self.joy_cb, queue_size=1)
-        self.odom_sub = rospy.Subscriber("odometry/filtered", Odometry, self.odom_cb, queue_size=1)
-        self.lin_vel_pub = rospy.Publisher("linear_velocity", Vector3, queue_size=10)
-        self.orientation_pub = rospy.Publisher("orientation", Quaternion, queue_size=10)
-        self.position_pub = rospy.Publisher("position", Vector3, queue_size=10)
-        self.off_pub = rospy.Publisher("off", Empty, queue_size=10)
-
         self.START_DEPTH = -1
         self.last_odom_msg = rospy.get_rostime()
         self.last_linear_velocity = np.zeros(3)
         self.desired_orientation = np.array([0, 0, 0, 1.0])
         self.ang_vel = np.zeros(3)
         self.enabled = False
+
+        self.joy_sub = rospy.Subscriber("/joy", Joy, self.joy_cb, queue_size=1)
+        self.odom_sub = rospy.Subscriber("odometry/filtered", Odometry, self.odom_cb, queue_size=1)
+        self.lin_vel_pub = rospy.Publisher("linear_velocity", Vector3, queue_size=10)
+        self.orientation_pub = rospy.Publisher("orientation", Quaternion, queue_size=10)
+        self.position_pub = rospy.Publisher("position", Vector3, queue_size=10)
+        self.off_pub = rospy.Publisher("off", Empty, queue_size=10)
       
     def joy_cb(self, msg):
         # Kill button
