@@ -91,16 +91,18 @@ class PS3Teleop():
             linear_velocity.z = curve(msg.axes[AXES_STICK_LEFT_UD]) * self.max_linear_velocity[2]
 
             # Build angular velocity
+            # 0.9 is to allow the robot to catch up to the moving target
             self.ang_vel = np.zeros(3)
-            self.ang_vel[2] = curve(msg.axes[AXES_STICK_RIGHT_LR]) * self.max_angular_velocity[2]
+            self.ang_vel[2] = curve(msg.axes[AXES_STICK_RIGHT_LR]) * self.max_angular_velocity[2] * 0.9
             if msg.buttons[BUTTON_CROSS_UP]:
-                self.ang_vel[1] = self.max_angular_velocity[1]
+                self.ang_vel[1] = self.max_angular_velocity[1] * 0.9
             if msg.buttons[BUTTON_CROSS_DOWN]:
-                self.ang_vel[1] = -self.max_angular_velocity[1]
+                self.ang_vel[1] = -self.max_angular_velocity[1] * 0.9
             if msg.buttons[BUTTON_CROSS_RIGHT]:
-                self.ang_vel[0] = self.max_angular_velocity[0]
+                self.ang_vel[0] = self.max_angular_velocity[0] * 0.9
             if msg.buttons[BUTTON_CROSS_LEFT]:
-                self.ang_vel[0] = -self.max_angular_velocity[0]
+                self.ang_vel[0] = -self.max_angular_velocity[0] * 0.9
+
 
             # Publish linear velocity if the joystick has been touched
             if not np.array_equal(self.last_linear_velocity, msgToNumpy(linear_velocity)):
