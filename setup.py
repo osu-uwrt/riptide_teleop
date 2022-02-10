@@ -24,7 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'ps3_teleop = riptide_teleop2.ps3_teleop:main'
+            'ps3_teleop = riptide_teleop2.ps3_teleop:main',
+            "keyboard_teleop = riptide_teleop2.keyboard_teleop:main"
         ],
     },
 )
