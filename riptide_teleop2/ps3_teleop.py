@@ -57,7 +57,7 @@ class PS3Teleop(Node):
     def __init__(self):
         super().__init__('riptide_teleop2')
 
-        self.declare_parameter('vehicle_config', '/config/tempest.yaml')
+        self.declare_parameter('vehicle_config', '/config/puddles.yaml')
         self._vehicle_config_path = self.get_parameter("vehicle_config").value
         with open(self._vehicle_config_path, 'r') as stream:
             config = yaml.safe_load(stream)
