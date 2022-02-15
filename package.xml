@@ -22,7 +22,6 @@
 
   <exec_depend>joy</exec_depend>
   <exec_depend>pynput-pip</exec_depend>
-  <exec_depend>roslaunch</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
 
   <export>
