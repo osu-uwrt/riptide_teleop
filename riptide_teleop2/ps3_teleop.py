@@ -36,14 +36,14 @@ BUTTON_START = 9
 BUTTON_STICK_LEFT = 10
 BUTTON_STICK_RIGHT = 11
 
-# BUTTON_CROSS_UP = 13
-# BUTTON_CROSS_DOWN = 14
-# BUTTON_CROSS_LEFT = 15
-# BUTTON_CROSS_RIGHT = 16
+BUTTON_CROSS_UP = 13
+BUTTON_CROSS_DOWN = 14
+BUTTON_CROSS_LEFT = 15
+BUTTON_CROSS_RIGHT = 16
 
 #Axes
-AXES_CROSS_LEFT_RIGHT = 4
-AXES_CROSS_UP_DOWN = 5
+# AXES_CROSS_LEFT_RIGHT = 4
+# AXES_CROSS_UP_DOWN = 5
 
 def msgToNumpy(msg):
     if hasattr(msg, "w"):
@@ -109,14 +109,14 @@ class PS3Teleop(Node):
             # 0.9 is to allow the robot to catch up to the moving target
             self.ang_vel = np.zeros(3)
             self.ang_vel[2] = curve(msg.axes[AXES_STICK_RIGHT_LR]) * self.max_angular_velocity[2] * 0.9
-            if msg.buttons[AXES_CROSS_UP_DOWN]:
+            if msg.buttons[BUTTON_CROSS_UP]:
                 self.ang_vel[1] = self.max_angular_velocity[1] * 0.9
-            if msg.buttons[AXES_CROSS_UP_DOWN]:
+            if msg.buttons[BUTTON_CROSS_DOWN]:
                 self.ang_vel[1] = -self.max_angular_velocity[1] * 0.9
-            if msg.buttons[AXES_CROSS_LEFT_RIGHT]:
-                self.ang_vel[0] = self.max_angular_velocity[0] * 0.9
-            if msg.buttons[AXES_CROSS_LEFT_RIGHT]:
+            if msg.buttons[BUTTON_CROSS_LEFT]:
                 self.ang_vel[0] = -self.max_angular_velocity[0] * 0.9
+            if msg.buttons[BUTTON_CROSS_RIGHT]:
+                self.ang_vel[0] = self.max_angular_velocity[0] * 0.9
 
 
             # Publish linear velocity if the joystick has been touched
