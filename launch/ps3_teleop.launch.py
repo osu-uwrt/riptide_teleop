@@ -32,7 +32,7 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='riptide_teleop2',
             executable='ps3_teleop',
-            name='riptide_teleop2',
+            name='ps3_teleop',
             respawn=True,
             output='screen',
             

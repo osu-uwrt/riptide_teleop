@@ -66,9 +66,9 @@ class KeyboardTeleop(Node):
         self.get_logger().info("odometry/filtered received.")
             
         #flattens robot
-        r, p, y = transforms3d.euler.quat2euler((msgToNumpy(self.odom_msg.pose.pose.orientation)))
+        r, p, y = transforms3d.euler.quat2euler((msgToNumpy(self.odom_msg.pose.pose.orientation)), axes='sxyz')
         r, p = 0, 0
-        self.desired_orientation = transforms3d.euler.euler2quat(r, p, y)
+        self.desired_orientation = transforms3d.euler.euler2quat(r, p, y, axes='sxyz')
         desired_position = msgToNumpy(self.odom_msg.pose.pose.position)
         if desired_position[2] > self.START_DEPTH:
             desired_position[2] = self.START_DEPTH
@@ -92,9 +92,9 @@ class KeyboardTeleop(Node):
                 self.stop()
                 self.off_pub.publish()
             if key == KeyCode.from_char("0"):
-                r, p, y = transforms3d.euler.quat2euler(self.desired_orientation)
+                r, p, y = transforms3d.euler.quat2euler(self.desired_orientation, axes='sxyz')
                 r, p = 0, 0
-                self.desired_orientation = transforms3d.euler.euler2quat(r, p, y)
+                self.desired_orientation = transforms3d.euler.euler2quat(r, p, y, axes='sxyz')
         else:
             if key == KeyCode.from_char("e"):
                 self.start()

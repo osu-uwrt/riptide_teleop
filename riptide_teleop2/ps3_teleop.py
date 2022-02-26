@@ -6,11 +6,13 @@ from rclpy.qos import qos_profile_system_default
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu, Joy
 from geometry_msgs.msg import Vector3, Quaternion
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Bool
 from transforms3d.euler import quat2euler, euler2quat
+from transforms3d.quaternions import qmult
 import numpy as np
 import math
 import yaml
+import sys
 
 AXES_STICK_LEFT_LR = 0 # Fully Leftwards = +1, Mid = 0, Fully Rightwards = -1
 AXES_STICK_LEFT_UD = 1 # Fully Upwards = +1, Mid = 0, Fully Downwards = -1
@@ -55,7 +57,7 @@ def curve(val):
 class PS3Teleop(Node):
 
     def __init__(self):
-        super().__init__('riptide_teleop2')
+        super().__init__('ps3_teleop')
 
         self.declare_parameter('vehicle_config', '/config/puddles.yaml')
         self._vehicle_config_path = self.get_parameter("vehicle_config").value
@@ -74,6 +76,7 @@ class PS3Teleop(Node):
 
         self.joy_sub = self.create_subscription(Joy, "/joy", self.joy_cb,  qos_profile_system_default)
         self.odom_sub = self.create_subscription(Odometry, "odometry/filtered", self.odom_cb, qos_profile_system_default)
+        self.teleop_enabled_pub = self.create_publisher(Bool, "teleop_enabled", qos_profile_system_default)
         self.lin_vel_pub = self.create_publisher(Vector3, "linear_velocity", qos_profile_system_default)
         self.orientation_pub = self.create_publisher(Quaternion, "orientation", qos_profile_system_default)
         self.position_pub = self.create_publisher(Vector3, "position", qos_profile_system_default)
@@ -81,10 +84,10 @@ class PS3Teleop(Node):
       
     def joy_cb(self, msg):
         # Kill button
-        self.get_logger().info('buttons: {}'.format(msg.buttons))
+        #self.get_logger().info('buttons: {}'.format(msg.buttons))
         if msg.buttons[BUTTON_SHAPE_X]:
             self.enabled = False
-            self.off_pub.publish()
+            self.off_pub.publish(Empty())
             return
 
         # Pause button
@@ -123,36 +126,38 @@ class PS3Teleop(Node):
 
             # Zero roll and pitch
             if msg.buttons[BUTTON_SHAPE_CIRCLE]:
-                r, p, y = quat2euler(self.desired_orientation)
+                r, p, y = quat2euler(self.desired_orientation, 'sxyz')
                 r, p = 0, 0
-                self.desired_orientation = quat2euler(r, p, y)
+                self.desired_orientation = euler2quat(r, p, y, axes='sxyz')
         else:
             # Start controlling
             if msg.buttons[BUTTON_START]:
                 # Zero roll and pitch
                 #TODO: This should be using odometry, instead its just leveling out.
-                r, p, y = quat2euler([0,0,0,1])
+                r, p, y = quat2euler([0,0,0,1], 'sxyz')
                 r, p = 0, 0
-                self.desired_orientation = euler2quat(r, p, y)
+                self.desired_orientation = euler2quat(r, p, y, axes='sxyz')
 
                 # Submerge if not submerged. Else stop the bot
                 #TODO: This should be using odometry, instead its just going 1 meter down.
                 desired_position = (0,0,-1)
                 if desired_position[2] > self.START_DEPTH:
                     desired_position[2] = self.START_DEPTH
-                    self.position_pub.publish(*desired_position)
+                    self.position_pub.publish(Vector3(float(desired_position[0]), float(desired_position[1]), float(desired_position[2])))
                 else:
                     self.lin_vel_pub.publish(Vector3())
 
                 self.enabled = True
+        
+        self.teleop_enabled_pub.publish(Bool(data=self.enabled))
 
     def odom_cb(self, msg):
         if self.enabled:
-            dt = (self.get_clock().now() - self.last_odom_msg).to_sec()
+            dt = (self.get_clock().now() - self.last_odom_msg).nanoseconds / 1e9
             self.odom = msg
-            rotation = euler2quat(*(self.ang_vel * dt))
-            self.desired_orientation = euler2quat(self.desired_orientation, rotation)
-            self.orientation_pub.publish(*self.desired_orientation)
+            rotation = euler2quat(*(self.ang_vel * dt), axes='sxyz')
+            self.desired_orientation = qmult(self.desired_orientation, rotation)
+            self.orientation_pub.publish(Quaternion(w=float(self.desired_orientation[0]), x=float(self.desired_orientation[1]), y=float(self.desired_orientation[2]), z=float(self.desired_orientation[3])))
 
         self.last_odom_msg = self.get_clock().now()
 
@@ -164,7 +169,4 @@ def main(args=None):
     rclpy.spin(node)
 
 if __name__=="__main__":
-    
-    rclpy.init_node('ps3_teleop')
-    ps3_teleop = PS3Teleop()
-    rclpy.spin()
+    main(sys.argv)
