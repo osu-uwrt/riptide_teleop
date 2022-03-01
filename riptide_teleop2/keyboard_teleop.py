@@ -16,7 +16,7 @@ from pynput.keyboard import Key, Listener, KeyCode
 
 def msgToNumpy(msg):
     if hasattr(msg, "w"):
-        return np.array([msg.x, msg.y, msg.z, msg.w])
+        return np.array([msg.w, msg.x, msg.y, msg.z])
     return np.array([msg.x, msg.y, msg.z])
 
 class KeyboardTeleop(Node):
@@ -72,7 +72,7 @@ class KeyboardTeleop(Node):
         desired_position = msgToNumpy(self.odom_msg.pose.pose.position)
         if desired_position[2] > self.START_DEPTH:
             desired_position[2] = self.START_DEPTH
-        self.position_pub.publish(*desired_position)
+        self.position_pub.publish(Vector3(float(desired_position[0]), float(desired_position[1]), float(desired_position[2])))
         self.enabled = True
         self.get_logger().info("Keyboard Teleop enabled")
 
@@ -90,7 +90,7 @@ class KeyboardTeleop(Node):
                 self.stop()
             if key == KeyCode.from_char("x"):
                 self.stop()
-                self.off_pub.publish()
+                self.off_pub.publish(Empty())
             if key == KeyCode.from_char("0"):
                 r, p, y = transforms3d.euler.quat2euler(self.desired_orientation, axes='sxyz')
                 r, p = 0, 0
@@ -138,7 +138,7 @@ class KeyboardTeleop(Node):
             dt = (self.get_clock().now() - self.last_odom_msg_time).to_sec()
             rotation = transforms3d.euler.euler2quat(*(ang_vel * dt))
             self.desired_orientation = transforms3d.quaternions.qmult(self.desired_orientation, rotation)
-            self.orientation_pub.publish(*self.desired_orientation)
+            self.orientation_pub.publish(Quaternion(w=float(self.desired_orientation[0]), x=float(self.desired_orientation[1]), y=float(self.desired_orientation[2]), z=float(self.desired_orientation[3])))
 
             if not np.array_equal(self.last_linear_velocity, msgToNumpy(linear_velocity)):
                 self.lin_vel_pub.publish(linear_velocity)

@@ -47,7 +47,7 @@ BUTTON_CROSS_RIGHT = 16
 
 def msgToNumpy(msg):
     if hasattr(msg, "w"):
-        return np.array([msg.x, msg.y, msg.z, msg.w])
+        return np.array([msg.w, msg.x, msg.y, msg.z])
     return np.array([msg.x, msg.y, msg.z])
 
 # Joystick curve to apply. This is a x^2 that keeps polarity
@@ -69,7 +69,7 @@ class PS3Teleop(Node):
         self.START_DEPTH = -1
         self.last_odom_msg = self.get_clock().now()
         self.last_linear_velocity = np.zeros(3)
-        self.desired_orientation = np.array([0, 0, 0, 1.0])
+        self.desired_orientation = np.array([1, 0, 0, 0])
         self.ang_vel = np.zeros(3)
         self.enabled = False
         self.odom = None
@@ -134,7 +134,7 @@ class PS3Teleop(Node):
             if msg.buttons[BUTTON_START]:
                 # Zero roll and pitch
                 #TODO: This should be using odometry, instead its just leveling out.
-                r, p, y = quat2euler([0,0,0,1], 'sxyz')
+                r, p, y = quat2euler([1,0,0,0], 'sxyz')
                 r, p = 0, 0
                 self.desired_orientation = euler2quat(r, p, y, axes='sxyz')
 
