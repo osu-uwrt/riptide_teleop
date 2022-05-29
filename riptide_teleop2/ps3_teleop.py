@@ -2,13 +2,14 @@
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_system_default
+from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import Imu, Joy
+from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Vector3, Quaternion
 from std_msgs.msg import Empty, Bool
 from transforms3d.euler import quat2euler, euler2quat
 from transforms3d.quaternions import qmult
+from riptide_msgs2 import ControllerCommand, KillSwitchReport
 import numpy as np
 import math
 import yaml
@@ -70,35 +71,37 @@ class PS3Teleop(Node):
         self.last_odom_msg = self.get_clock().now()
         self.last_linear_velocity = np.zeros(3)
         self.desired_orientation = np.array([1, 0, 0, 0])
+        self.kill_msg = KillSwitchReport()
         self.ang_vel = np.zeros(3)
         self.enabled = False
         self.odom = None
 
         self.joy_sub = self.create_subscription(Joy, "/joy", self.joy_cb,  qos_profile_system_default)
         self.odom_sub = self.create_subscription(Odometry, "odometry/filtered", self.odom_cb, qos_profile_system_default)
-        self.teleop_enabled_pub = self.create_publisher(Bool, "teleop_enabled", qos_profile_system_default)
-        self.lin_vel_pub = self.create_publisher(Vector3, "linear_velocity", qos_profile_system_default)
-        self.orientation_pub = self.create_publisher(Quaternion, "orientation", qos_profile_system_default)
-        self.position_pub = self.create_publisher(Vector3, "position", qos_profile_system_default)
-        self.off_pub = self.create_publisher(Empty, "off", qos_profile_system_default)
+
+        self.software_kill_pub = self.create_publisher(KillSwitchReport, "control/software_kill", qos_profile_sensor_data)
+        self.lin_pub = self.create_publisher(ControllerCommand, "controller/linear", qos_profile_system_default)
+        self.ang_pub = self.create_publisher(ControllerCommand, "controller/angular", qos_profile_system_default)
       
     def joy_cb(self, msg):
         # Kill button
         #self.get_logger().info('buttons: {}'.format(msg.buttons))
         if msg.buttons[BUTTON_SHAPE_X]:
             self.enabled = False
-            self.off_pub.publish(Empty())
+            self.kill_msg.switch_asserting_kill = True
             return
 
         # Pause button
-        if self.enabled and msg.buttons[BUTTON_SHAPE_SQUARE]:
+        elif self.enabled and msg.buttons[BUTTON_SHAPE_SQUARE]:
             self.enabled = False
-            self.lin_vel_pub.publish(Vector3())
+            self.kill_msg.switch_asserting_kill = False
             self.last_linear_velocity = np.zeros(3)
             return
 
         # While controller is enabled
         if self.enabled:
+            self.kill_msg.switch_asserting_kill = False
+
             # Build linear velocity
             linear_velocity = Vector3()
             linear_velocity.x = curve(msg.axes[AXES_STICK_RIGHT_UD]) * self.max_linear_velocity[0]
@@ -121,7 +124,10 @@ class PS3Teleop(Node):
 
             # Publish linear velocity if the joystick has been touched
             if not np.array_equal(self.last_linear_velocity, msgToNumpy(linear_velocity)):
-                self.lin_vel_pub.publish(linear_velocity)
+                lin_msg = ControllerCommand()
+                lin_msg.setpoint_vect = linear_velocity
+                lin_msg.mode = ControllerCommand.VELOCITY
+                self.lin_pub.publish(lin_msg)
                 self.last_linear_velocity = msgToNumpy(linear_velocity)
 
             # Zero roll and pitch
@@ -143,13 +149,19 @@ class PS3Teleop(Node):
                 desired_position = (0,0,-1)
                 if desired_position[2] > self.START_DEPTH:
                     desired_position[2] = self.START_DEPTH
-                    self.position_pub.publish(Vector3(float(desired_position[0]), float(desired_position[1]), float(desired_position[2])))
+                    lin_msg = ControllerCommand()
+                    lin_msg.setpoint_vect = Vector3(float(desired_position[0]), float(desired_position[1]), float(desired_position[2]))
+                    lin_msg.mode = ControllerCommand.POSITION
+                    self.lin_pub.publish(lin_msg)
                 else:
-                    self.lin_vel_pub.publish(Vector3())
+                    lin_msg = ControllerCommand()
+                    lin_msg.setpoint_vect = Vector3()
+                    lin_msg.mode = ControllerCommand.VELOCITY
+                    self.lin_pub.publish(lin_msg)
 
                 self.enabled = True
         
-        self.teleop_enabled_pub.publish(Bool(data=self.enabled))
+        self.software_kill_pub.publish(self.kill_msg)
 
     def odom_cb(self, msg):
         if self.enabled:
@@ -157,7 +169,10 @@ class PS3Teleop(Node):
             self.odom = msg
             rotation = euler2quat(*(self.ang_vel * dt), axes='sxyz')
             self.desired_orientation = qmult(self.desired_orientation, rotation)
-            self.orientation_pub.publish(Quaternion(w=float(self.desired_orientation[0]), x=float(self.desired_orientation[1]), y=float(self.desired_orientation[2]), z=float(self.desired_orientation[3])))
+            ang_msg = ControllerCommand()
+            ang_msg.setpoint_quat = Quaternion(w=float(self.desired_orientation[0]), x=float(self.desired_orientation[1]), y=float(self.desired_orientation[2]), z=float(self.desired_orientation[3]))
+            ang_msg.mode = ControllerCommand.POSITION
+            self.ang_pub.publish(ang_msg)
 
         self.last_odom_msg = self.get_clock().now()
 
