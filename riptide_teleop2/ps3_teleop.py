@@ -63,8 +63,8 @@ class PS3Teleop(Node):
         self._vehicle_config_path = self.get_parameter("vehicle_config").value
         with open(self._vehicle_config_path, 'r') as stream:
             config = yaml.safe_load(stream)
-            self.max_linear_velocity = config["maximum_linear_velocity"]
-            self.max_angular_velocity = config["maximum_angular_velocity"]
+            self.max_linear_velocity = config['controller']['linear']['max']['velocity']
+            self.max_angular_velocity = config['controller']['angular']['max']['velocity']
 
         self.START_DEPTH = -1
         self.last_odom_msg = self.get_clock().now()

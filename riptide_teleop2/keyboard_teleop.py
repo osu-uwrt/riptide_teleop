@@ -32,14 +32,12 @@ class KeyboardTeleop(Node):
         self.get_logger().info("")
         self.get_logger().info("Keyboard Teleop disabled. Press e to enable")
         
-        # config_path = self.get_parameter("~vehicle_config").get_parameter_value().string_value
-        # with open(config_path, 'r') as stream:
-        #     config = yaml.safe_load(stream)
-        #     self.max_linear_velocity = config["maximum_linear_velocity"]
-        #     self.max_angular_velocity = config["maximum_angular_velocity"]
-
-        self.max_linear_velocity = 1
-        self.max_angular_velocity =1
+        self.declare_parameter('vehicle_config', '/config/puddles.yaml')
+        self._vehicle_config_path = self.get_parameter("vehicle_config").value
+        with open(self._vehicle_config_path, 'r') as stream:
+            config = yaml.safe_load(stream)
+            self.max_linear_velocity = config['controller']['linear']['max']['velocity']
+            self.max_angular_velocity = config['controller']['angular']['max']['velocity']
 
         self.odom_sub = self.create_subscription(Odometry, "odometry/filtered", self.odom_cb, 10)
         self.receivedOdom = False
