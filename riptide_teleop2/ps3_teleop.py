@@ -9,7 +9,7 @@ from geometry_msgs.msg import Vector3, Quaternion
 from std_msgs.msg import Empty, Bool
 from transforms3d.euler import quat2euler, euler2quat
 from transforms3d.quaternions import qmult
-from riptide_msgs2 import ControllerCommand, KillSwitchReport
+from riptide_msgs2.msg import ControllerCommand, KillSwitchReport
 import numpy as np
 import math
 import yaml
