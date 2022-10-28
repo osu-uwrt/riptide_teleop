@@ -6,7 +6,6 @@ from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Vector3, Quaternion
-from std_msgs.msg import Empty, Bool
 from transforms3d.euler import quat2euler, euler2quat
 from transforms3d.quaternions import qmult
 from riptide_msgs2.msg import ControllerCommand, KillSwitchReport
