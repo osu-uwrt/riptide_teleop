@@ -1,7 +1,0 @@
-<launch>
-  <arg name="robot" default="tempest" doc="Which robot to control" />
-
-  <node pkg="riptide_teleop" type="keyboard_teleop.py" name="keyboard_teleop" output="screen" ns="$(arg robot)">
-    <param name="vehicle_config" value="$(find riptide_descriptions)/config/$(arg robot).yaml" />
-  </node>
-</launch>
